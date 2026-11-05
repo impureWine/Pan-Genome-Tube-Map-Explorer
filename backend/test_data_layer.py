@@ -2,6 +2,7 @@
 import json
 import tempfile
 import unittest
+from contextlib import closing
 from pathlib import Path
 
 from .database import connect, query_region
@@ -31,7 +32,7 @@ class DataLayerTests(unittest.TestCase):
         self.assertEqual(result['anchored_nodes'], 62)
         self.assertEqual(set(result['edge_types']), {'normal', 'insertion', 'deletion', 'inversion'})
         self.assertEqual(result['edge_types'], {'normal': 61, 'insertion': 2, 'deletion': 1, 'inversion': 2})
-        with connect(db) as conn:
+        with closing(connect(db)) as conn:
             self.assertEqual(conn.execute('PRAGMA integrity_check').fetchone()[0], 'ok')
             self.assertEqual(conn.execute('PRAGMA foreign_key_check').fetchall(), [])
             self.assertEqual(conn.execute("SELECT length FROM nodes WHERE id='ins_500'").fetchone()[0], 500)

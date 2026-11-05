@@ -1,0 +1,772 @@
+{
+  "start": 900,
+  "end": 901,
+  "lod": "micro",
+  "coordinate_system": "0-based-half-open",
+  "nodes": [
+    {
+      "id": "10",
+      "length": 1,
+      "is_backbone": true,
+      "ref_start": 900,
+      "ref_end": 901,
+      "context_only": false,
+      "x": 160.0,
+      "y": 0.0,
+      "width": 24.0,
+      "height": 42.0,
+      "track_slot": 0,
+      "topology_depth": 0,
+      "reference_orientation": "+",
+      "sequence": "T",
+      "tracks": [
+        {
+          "sample_id": "GRCh38",
+          "offset_y": -15.0
+        },
+        {
+          "sample_id": "HG005",
+          "offset_y": -3.0
+        },
+        {
+          "sample_id": "HG007",
+          "offset_y": 3.0
+        },
+        {
+          "sample_id": "HG011",
+          "offset_y": 9.0
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "length": 100,
+      "is_backbone": true,
+      "ref_start": 901,
+      "ref_end": 1001,
+      "context_only": true,
+      "x": 224.0,
+      "y": 0.0,
+      "width": 80.0,
+      "height": 42.0,
+      "track_slot": 0,
+      "topology_depth": 0,
+      "reference_orientation": "+",
+      "sequence": "GTGATCACTCCATGAAACGAGTGCGTAACGGACACCCCGCAAAGCATTGGTAGTGCTCGAATATCTCCCGGGGAACACCAACGTATGCAGGGCCACTATT",
+      "tracks": [
+        {
+          "sample_id": "GRCh38",
+          "offset_y": -15.0
+        },
+        {
+          "sample_id": "HG002",
+          "offset_y": -9.0
+        },
+        {
+          "sample_id": "HG005",
+          "offset_y": -3.0
+        },
+        {
+          "sample_id": "HG007",
+          "offset_y": 3.0
+        },
+        {
+          "sample_id": "HG011",
+          "offset_y": 9.0
+        },
+        {
+          "sample_id": "HG020",
+          "offset_y": 15.0
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "length": 100,
+      "is_backbone": true,
+      "ref_start": 800,
+      "ref_end": 900,
+      "context_only": true,
+      "x": 40.0,
+      "y": 0.0,
+      "width": 80.0,
+      "height": 42.0,
+      "track_slot": 0,
+      "topology_depth": 0,
+      "reference_orientation": "+",
+      "sequence": "CTATTTAGCGCCATCAAAGCTCCTCTTATTTCAGTAAGAAGCTAAACCGAGGCGGGGGACTCTGCCGAGCTCAGTCTGCTAGTACCTAGGCACATATTCT",
+      "tracks": [
+        {
+          "sample_id": "GRCh38",
+          "offset_y": -15.0
+        },
+        {
+          "sample_id": "HG002",
+          "offset_y": -9.0
+        },
+        {
+          "sample_id": "HG005",
+          "offset_y": -3.0
+        },
+        {
+          "sample_id": "HG007",
+          "offset_y": 3.0
+        },
+        {
+          "sample_id": "HG011",
+          "offset_y": 9.0
+        },
+        {
+          "sample_id": "HG020",
+          "offset_y": 15.0
+        }
+      ]
+    },
+    {
+      "id": "snp_alt",
+      "length": 1,
+      "is_backbone": false,
+      "ref_start": 900,
+      "ref_end": 901,
+      "context_only": false,
+      "x": 160.0,
+      "y": -78.0,
+      "width": 24.0,
+      "height": 42.0,
+      "track_slot": -1,
+      "topology_depth": 1,
+      "reference_orientation": "+",
+      "sequence": "A",
+      "tracks": [
+        {
+          "sample_id": "HG002",
+          "offset_y": -9.0
+        },
+        {
+          "sample_id": "HG020",
+          "offset_y": 15.0
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": 2,
+      "from_node": "10",
+      "from_orn": "+",
+      "to_node": "11",
+      "to_orn": "+",
+      "sv_type": "normal",
+      "overlap": "0M",
+      "sample_ids": [
+        "GRCh38",
+        "HG005",
+        "HG007",
+        "HG011"
+      ],
+      "segments": [
+        {
+          "x1": 184.0,
+          "y1": 0.0,
+          "cp1x": 197.33333333333334,
+          "cp1y": 0.0,
+          "cp2x": 210.66666666666666,
+          "cp2y": 0.0,
+          "x2": 224.0,
+          "y2": 0.0
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "from_node": "10",
+      "from_orn": "-",
+      "to_node": "9",
+      "to_orn": "-",
+      "sv_type": "normal",
+      "overlap": "0M",
+      "sample_ids": [
+        "GRCh38",
+        "HG005",
+        "HG007",
+        "HG011"
+      ],
+      "segments": [
+        {
+          "x1": 160.0,
+          "y1": 0.0,
+          "cp1x": 146.66666666666666,
+          "cp1y": 0.0,
+          "cp2x": 133.33333333333334,
+          "cp2y": 0.0,
+          "x2": 120.0,
+          "y2": 0.0
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "from_node": "11",
+      "from_orn": "-",
+      "to_node": "snp_alt",
+      "to_orn": "-",
+      "sv_type": "normal",
+      "overlap": "0M",
+      "sample_ids": [
+        "HG002",
+        "HG020"
+      ],
+      "segments": [
+        {
+          "x1": 224.0,
+          "y1": 0.0,
+          "cp1x": 210.66666666666666,
+          "cp1y": 0.0,
+          "cp2x": 197.33333333333334,
+          "cp2y": -78.0,
+          "x2": 184.0,
+          "y2": -78.0
+        }
+      ]
+    },
+    {
+      "id": 66,
+      "from_node": "9",
+      "from_orn": "+",
+      "to_node": "snp_alt",
+      "to_orn": "+",
+      "sv_type": "normal",
+      "overlap": "0M",
+      "sample_ids": [
+        "HG002",
+        "HG020"
+      ],
+      "segments": [
+        {
+          "x1": 120.0,
+          "y1": 0.0,
+          "cp1x": 133.33333333333334,
+          "cp1y": 0.0,
+          "cp2x": 146.66666666666666,
+          "cp2y": -78.0,
+          "x2": 160.0,
+          "y2": -78.0
+        }
+      ]
+    }
+  ],
+  "tracks": [
+    {
+      "sample_id": "GRCh38",
+      "group_name": "Control",
+      "offset_y": -15.0,
+      "fragments": [
+        {
+          "steps": [
+            {
+              "node_id": "9",
+              "orientation": "+",
+              "path_index": 8
+            },
+            {
+              "node_id": "10",
+              "orientation": "+",
+              "path_index": 9
+            },
+            {
+              "node_id": "11",
+              "orientation": "+",
+              "path_index": 10
+            }
+          ],
+          "edge_ids": [
+            3,
+            2
+          ],
+          "segments": [
+            {
+              "x1": 40.0,
+              "y1": -15.0,
+              "cp1x": 66.66666666666667,
+              "cp1y": -15.0,
+              "cp2x": 93.33333333333333,
+              "cp2y": -15.0,
+              "x2": 120.0,
+              "y2": -15.0
+            },
+            {
+              "x1": 120.0,
+              "y1": -15.0,
+              "cp1x": 133.33333333333334,
+              "cp1y": -15.0,
+              "cp2x": 146.66666666666666,
+              "cp2y": -15.0,
+              "x2": 160.0,
+              "y2": -15.0
+            },
+            {
+              "x1": 160.0,
+              "y1": -15.0,
+              "cp1x": 172.0,
+              "cp1y": -15.0,
+              "cp2x": 172.0,
+              "cp2y": -15.0,
+              "x2": 184.0,
+              "y2": -15.0
+            },
+            {
+              "x1": 184.0,
+              "y1": -15.0,
+              "cp1x": 197.33333333333334,
+              "cp1y": -15.0,
+              "cp2x": 210.66666666666666,
+              "cp2y": -15.0,
+              "x2": 224.0,
+              "y2": -15.0
+            },
+            {
+              "x1": 224.0,
+              "y1": -15.0,
+              "cp1x": 250.66666666666666,
+              "cp1y": -15.0,
+              "cp2x": 277.3333333333333,
+              "cp2y": -15.0,
+              "x2": 304.0,
+              "y2": -15.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sample_id": "HG002",
+      "group_name": "Control",
+      "offset_y": -9.0,
+      "fragments": [
+        {
+          "steps": [
+            {
+              "node_id": "9",
+              "orientation": "+",
+              "path_index": 8
+            },
+            {
+              "node_id": "snp_alt",
+              "orientation": "+",
+              "path_index": 9
+            },
+            {
+              "node_id": "11",
+              "orientation": "+",
+              "path_index": 10
+            }
+          ],
+          "edge_ids": [
+            66,
+            5
+          ],
+          "segments": [
+            {
+              "x1": 40.0,
+              "y1": -9.0,
+              "cp1x": 66.66666666666667,
+              "cp1y": -9.0,
+              "cp2x": 93.33333333333333,
+              "cp2y": -9.0,
+              "x2": 120.0,
+              "y2": -9.0
+            },
+            {
+              "x1": 120.0,
+              "y1": -9.0,
+              "cp1x": 133.33333333333334,
+              "cp1y": -9.0,
+              "cp2x": 146.66666666666666,
+              "cp2y": -87.0,
+              "x2": 160.0,
+              "y2": -87.0
+            },
+            {
+              "x1": 160.0,
+              "y1": -87.0,
+              "cp1x": 172.0,
+              "cp1y": -87.0,
+              "cp2x": 172.0,
+              "cp2y": -87.0,
+              "x2": 184.0,
+              "y2": -87.0
+            },
+            {
+              "x1": 184.0,
+              "y1": -87.0,
+              "cp1x": 197.33333333333334,
+              "cp1y": -87.0,
+              "cp2x": 210.66666666666666,
+              "cp2y": -9.0,
+              "x2": 224.0,
+              "y2": -9.0
+            },
+            {
+              "x1": 224.0,
+              "y1": -9.0,
+              "cp1x": 250.66666666666666,
+              "cp1y": -9.0,
+              "cp2x": 277.3333333333333,
+              "cp2y": -9.0,
+              "x2": 304.0,
+              "y2": -9.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sample_id": "HG005",
+      "group_name": "Case",
+      "offset_y": -3.0,
+      "fragments": [
+        {
+          "steps": [
+            {
+              "node_id": "9",
+              "orientation": "+",
+              "path_index": 8
+            },
+            {
+              "node_id": "10",
+              "orientation": "+",
+              "path_index": 9
+            },
+            {
+              "node_id": "11",
+              "orientation": "+",
+              "path_index": 10
+            }
+          ],
+          "edge_ids": [
+            3,
+            2
+          ],
+          "segments": [
+            {
+              "x1": 40.0,
+              "y1": -3.0,
+              "cp1x": 66.66666666666667,
+              "cp1y": -3.0,
+              "cp2x": 93.33333333333333,
+              "cp2y": -3.0,
+              "x2": 120.0,
+              "y2": -3.0
+            },
+            {
+              "x1": 120.0,
+              "y1": -3.0,
+              "cp1x": 133.33333333333334,
+              "cp1y": -3.0,
+              "cp2x": 146.66666666666666,
+              "cp2y": -3.0,
+              "x2": 160.0,
+              "y2": -3.0
+            },
+            {
+              "x1": 160.0,
+              "y1": -3.0,
+              "cp1x": 172.0,
+              "cp1y": -3.0,
+              "cp2x": 172.0,
+              "cp2y": -3.0,
+              "x2": 184.0,
+              "y2": -3.0
+            },
+            {
+              "x1": 184.0,
+              "y1": -3.0,
+              "cp1x": 197.33333333333334,
+              "cp1y": -3.0,
+              "cp2x": 210.66666666666666,
+              "cp2y": -3.0,
+              "x2": 224.0,
+              "y2": -3.0
+            },
+            {
+              "x1": 224.0,
+              "y1": -3.0,
+              "cp1x": 250.66666666666666,
+              "cp1y": -3.0,
+              "cp2x": 277.3333333333333,
+              "cp2y": -3.0,
+              "x2": 304.0,
+              "y2": -3.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sample_id": "HG007",
+      "group_name": "Case",
+      "offset_y": 3.0,
+      "fragments": [
+        {
+          "steps": [
+            {
+              "node_id": "9",
+              "orientation": "+",
+              "path_index": 8
+            },
+            {
+              "node_id": "10",
+              "orientation": "+",
+              "path_index": 9
+            },
+            {
+              "node_id": "11",
+              "orientation": "+",
+              "path_index": 10
+            }
+          ],
+          "edge_ids": [
+            3,
+            2
+          ],
+          "segments": [
+            {
+              "x1": 40.0,
+              "y1": 3.0,
+              "cp1x": 66.66666666666667,
+              "cp1y": 3.0,
+              "cp2x": 93.33333333333333,
+              "cp2y": 3.0,
+              "x2": 120.0,
+              "y2": 3.0
+            },
+            {
+              "x1": 120.0,
+              "y1": 3.0,
+              "cp1x": 133.33333333333334,
+              "cp1y": 3.0,
+              "cp2x": 146.66666666666666,
+              "cp2y": 3.0,
+              "x2": 160.0,
+              "y2": 3.0
+            },
+            {
+              "x1": 160.0,
+              "y1": 3.0,
+              "cp1x": 172.0,
+              "cp1y": 3.0,
+              "cp2x": 172.0,
+              "cp2y": 3.0,
+              "x2": 184.0,
+              "y2": 3.0
+            },
+            {
+              "x1": 184.0,
+              "y1": 3.0,
+              "cp1x": 197.33333333333334,
+              "cp1y": 3.0,
+              "cp2x": 210.66666666666666,
+              "cp2y": 3.0,
+              "x2": 224.0,
+              "y2": 3.0
+            },
+            {
+              "x1": 224.0,
+              "y1": 3.0,
+              "cp1x": 250.66666666666666,
+              "cp1y": 3.0,
+              "cp2x": 277.3333333333333,
+              "cp2y": 3.0,
+              "x2": 304.0,
+              "y2": 3.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sample_id": "HG011",
+      "group_name": "Case",
+      "offset_y": 9.0,
+      "fragments": [
+        {
+          "steps": [
+            {
+              "node_id": "9",
+              "orientation": "+",
+              "path_index": 8
+            },
+            {
+              "node_id": "10",
+              "orientation": "+",
+              "path_index": 9
+            },
+            {
+              "node_id": "11",
+              "orientation": "+",
+              "path_index": 10
+            }
+          ],
+          "edge_ids": [
+            3,
+            2
+          ],
+          "segments": [
+            {
+              "x1": 40.0,
+              "y1": 9.0,
+              "cp1x": 66.66666666666667,
+              "cp1y": 9.0,
+              "cp2x": 93.33333333333333,
+              "cp2y": 9.0,
+              "x2": 120.0,
+              "y2": 9.0
+            },
+            {
+              "x1": 120.0,
+              "y1": 9.0,
+              "cp1x": 133.33333333333334,
+              "cp1y": 9.0,
+              "cp2x": 146.66666666666666,
+              "cp2y": 9.0,
+              "x2": 160.0,
+              "y2": 9.0
+            },
+            {
+              "x1": 160.0,
+              "y1": 9.0,
+              "cp1x": 172.0,
+              "cp1y": 9.0,
+              "cp2x": 172.0,
+              "cp2y": 9.0,
+              "x2": 184.0,
+              "y2": 9.0
+            },
+            {
+              "x1": 184.0,
+              "y1": 9.0,
+              "cp1x": 197.33333333333334,
+              "cp1y": 9.0,
+              "cp2x": 210.66666666666666,
+              "cp2y": 9.0,
+              "x2": 224.0,
+              "y2": 9.0
+            },
+            {
+              "x1": 224.0,
+              "y1": 9.0,
+              "cp1x": 250.66666666666666,
+              "cp1y": 9.0,
+              "cp2x": 277.3333333333333,
+              "cp2y": 9.0,
+              "x2": 304.0,
+              "y2": 9.0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sample_id": "HG020",
+      "group_name": "Case",
+      "offset_y": 15.0,
+      "fragments": [
+        {
+          "steps": [
+            {
+              "node_id": "9",
+              "orientation": "+",
+              "path_index": 8
+            },
+            {
+              "node_id": "snp_alt",
+              "orientation": "+",
+              "path_index": 9
+            },
+            {
+              "node_id": "11",
+              "orientation": "+",
+              "path_index": 10
+            }
+          ],
+          "edge_ids": [
+            66,
+            5
+          ],
+          "segments": [
+            {
+              "x1": 40.0,
+              "y1": 15.0,
+              "cp1x": 66.66666666666667,
+              "cp1y": 15.0,
+              "cp2x": 93.33333333333333,
+              "cp2y": 15.0,
+              "x2": 120.0,
+              "y2": 15.0
+            },
+            {
+              "x1": 120.0,
+              "y1": 15.0,
+              "cp1x": 133.33333333333334,
+              "cp1y": 15.0,
+              "cp2x": 146.66666666666666,
+              "cp2y": -63.0,
+              "x2": 160.0,
+              "y2": -63.0
+            },
+            {
+              "x1": 160.0,
+              "y1": -63.0,
+              "cp1x": 172.0,
+              "cp1y": -63.0,
+              "cp2x": 172.0,
+              "cp2y": -63.0,
+              "x2": 184.0,
+              "y2": -63.0
+            },
+            {
+              "x1": 184.0,
+              "y1": -63.0,
+              "cp1x": 197.33333333333334,
+              "cp1y": -63.0,
+              "cp2x": 210.66666666666666,
+              "cp2y": 15.0,
+              "x2": 224.0,
+              "y2": 15.0
+            },
+            {
+              "x1": 224.0,
+              "y1": 15.0,
+              "cp1x": 250.66666666666666,
+              "cp1y": 15.0,
+              "cp2x": 277.3333333333333,
+              "cp2y": 15.0,
+              "x2": 304.0,
+              "y2": 15.0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "snp_bubbles": 1,
+    "insertion_components": 0,
+    "replacement_components": 0,
+    "deletion_edges": 0,
+    "inversion_edges": 0,
+    "edge_counts": {
+      "normal": 4,
+      "insertion": 0,
+      "deletion": 0,
+      "inversion": 0
+    },
+    "counting_method": "topology-components-and-edges; not phased biological event counts"
+  },
+  "bounds": {
+    "min_x": -20.0,
+    "min_y": -119.0,
+    "max_x": 324.0,
+    "max_y": 41.0
+  }
+}
