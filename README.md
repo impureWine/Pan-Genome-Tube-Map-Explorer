@@ -1,6 +1,6 @@
 # Pan-Genome Tube Map Explorer
 
-当前实现：**Step 1 — GFA 解析与 SQLite 存储索引**，以及 **Step 2 — 地铁图布局与 FastAPI 子图接口**。运行环境 Python 3.10+。Step 1 仅使用标准库；Step 2 依赖见 `backend/requirements.txt`。
+当前实现：**Step 1 — GFA 解析与 SQLite 存储索引**、**Step 2 — 地铁图布局与 FastAPI 子图接口**、**Step 3 — 暗黑前端工作台与 API 联调**。后端 Python 3.10+，前端 Node.js 20.9+（本地验证使用 Node 24）。Step 1 仅使用标准库；Step 2 依赖见 `backend/requirements.txt`。
 
 ## 运行（PowerShell）
 
@@ -117,3 +117,77 @@ curl.exe -i -X OPTIONS "http://127.0.0.1:8000/api/subgraph" -H "Origin: http://l
 - 样本路径在未返回的节点处切分 `fragments`，保持真实的原路径索引，不跨空缺伪造连线。环和重复步骤保留顺序。
 - 统计按拓扑分量及边计数，不将两条倒位边误称为两个生物学倒位事件：全图 SNP=1、插入分量=1、缺失边=1、倒位边=2。`summary.edge_counts` 仅统计触及或横跨窗口的边，可能少于含上下文的全部 `edges`。
 - 当前同步实现限制局部节点数；恢复参考方向和样本轨道时仍会读取全体参考节点与路径 JSON。尚未实现染色体级预计算、路径区间索引或缓存。
+
+## Step 3：前端工作台
+
+Next.js App Router + TypeScript + Tailwind CSS 4，采用本地 Public Sans 字体和 Lucide 图标。前端只实现 UI、交互容器和数据状态，不包含 Canvas/Pixi 地铁轨道渲染。
+
+终端 A，在仓库根目录启动后端（首次运行先按 Step 2 安装依赖）：
+
+```powershell
+.venv\Scripts\python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+终端 B：
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+打开 <http://127.0.0.1:3000>。页面通过同源 `/api/genome/meta`、`/api/subgraph` 请求，由 Next.js rewrite 转发到 `http://127.0.0.1:8000`。默认无需修改后端 CORS。自定义后端地址可参照 `frontend/.env.example`，在启动或构建前设置 `BACKEND_URL`，例如 `$env:BACKEND_URL='http://127.0.0.1:8001'`。生产构建与启动使用相同环境设置。
+
+生产验收（先停止开发服务器，保留后端）：
+
+```powershell
+npm run build
+npm run lint
+npm run typecheck
+npm run start
+```
+
+第三个终端，在 `frontend/` 中执行：
+
+```powershell
+# Windows 默认使用已安装的 Edge；其他系统先安装 Chromium
+# npx playwright install chromium
+npm run test:e2e -- --output="../.taste-skill/test-$(Get-Date -Format yyyyMMdd-HHmmss)"
+
+# 验证 Next.js 转发的真实 API
+curl.exe --fail "http://127.0.0.1:3000/api/genome/meta"
+curl.exe --fail "http://127.0.0.1:3000/api/subgraph?start=900&end=901&lod=micro"
+```
+
+可用 `PLAYWRIGHT_CHANNEL` 指定浏览器通道，`FRONTEND_URL` 指定测试地址。浏览器测试使用真实成功请求，并单独模拟故障测试重试逻辑；测试结果目录使用时间戳保留历史文件。
+
+### 手动验收清单
+
+1. 首屏默认区间 `[1000,5000)`，HUD 应显示 45 nodes、48 edges、6 sample paths；Control 2 个样本、Case 4 个样本均来自 API。API 状态和耗时来自实际请求。
+2. 搜索 `900-901` 并回车，HUD 显示 4 nodes、4 edges。也接受逗号、短横线/长横线/冒号分隔。输入 `5000-1000` 显示校验提示并保留有效视口。
+3. 点击 Zoom In/Out；Reset 恢复 `[0,5901)`，HUD 显示 62 nodes、66 edges。Auto 在跨度不超过 1500 bp 时请求 micro，否则请求 macro；两个手动模式会强制请求相应 LOD。
+4. 拖动中央网格平移；鼠标移动更新 Cursor bp。聚焦容器后可用左右方向键平移、`+/-` 缩放。`Ctrl/Cmd+K` 聚焦区间搜索。
+5. 拖动 Genome overview 的高亮窗口，主视口和请求同步变化。该滑块支持左右方向键、Home、End，且边界被限制在参考长度以内。
+6. 勾选/取消样本，或按 Control/Case 分组显隐；SNP/InDel/Inversion 开关更新本地 Display selection 数量，原始 Returned nodes/edges 保留后端返回值。图中的样本显隐与过滤偏好保存在当前 React 会话，不修改数据库。
+7. 在 `900-901` 窗口关闭 SNP，Display selection 应从 4 nodes/4 edges 变为 3 nodes/2 edges。普通主干仍保留；SNP 分类来自当前节点拓扑，InDel 来自插入/缺失，Inversion 来自倒位边。
+8. 停止后端后点击 Refresh，页面显示错误和 Retry connection；重启后端并重试可恢复。查询有 160 ms 防抖、15 秒超时与 AbortController 取消，旧结果不会作为新窗口数据显示。
+9. 390 px 和 768 px 下侧栏折叠为抽屉；顶部按钮打开控制舱，Escape 或遮罩关闭，键盘焦点保留在打开的抽屉内。
+
+参考选择器当前仅有模拟数据库的 GRCh38 单参考；Step 2 元数据没有染色体目录，因此不提供虚构染色体选项。样本与变异过滤在前端计算显示偏好，不增加 Step 2 未提供的 API 参数。倒位数沿用后端的**连边计数**。
+
+### 前端文件
+
+| 文件 | 职责 |
+|---|---|
+| `frontend/src/components/workbench.tsx` | 整体布局、顶部控制栏、共享区间与显示偏好状态 |
+| `frontend/src/components/sample-sidebar.tsx` | 分组样本复选框、变异开关 |
+| `frontend/src/components/viewport.tsx` | 网格占位、指针坐标、拖动与 API HUD |
+| `frontend/src/components/minimap.tsx` | 按真实比例展示并拖动的参考范围条 |
+| `frontend/src/lib/use-genome-api.ts` | 防抖、取消、超时、加载与失败状态 |
+| `frontend/src/lib/region.ts` | 区间解析、缩放与边界约束 |
+| `frontend/src/lib/types.ts` | 与 Step 2 对齐的数据契约 |
+| `frontend/tests/workbench.spec.ts` | 四个浏览器验收场景 |
+
+验证记录：生产构建、ESLint、TypeScript 全部通过；4 个浏览器测试通过；1440/768/390 三尺寸视觉检查为 0 FAIL、2 WARN（紧凑元数据字号、按本步要求保留的开放网格）。设计方向与复核说明见 [`frontend/DESIGN.md`](frontend/DESIGN.md)。框架配置依据 [Next.js 安装文档](https://nextjs.org/docs/app/getting-started/installation) 和 [Tailwind Next.js 集成文档](https://tailwindcss.com/docs/installation/framework-guides/nextjs)。
+
+![Step 3 desktop workspace](frontend/docs/step3-desktop.jpg)
