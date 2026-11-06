@@ -47,3 +47,9 @@ Top three items after fixes:
 3. The viewport's center remains sparse until the separately requested rendering step. No fabricated tube paths were added to fill it.
 
 Data provenance: all numbers and sample/group names come from the Step 1 mock database via Step 2 API. The demo reference selector exposes one GRCh38 reference, not a list of unimplemented chromosomes. There are no stock photos, generated images or invented research findings.
+
+## Step 4 review
+
+Kept Data terminal seed 1922461817 and Public Sans, without redraw. The subject's own haplotype paths now replace the empty grid. Neon glow and glass tooltips are explicit user requirements; the surrounding chrome remains quiet. No stock imagery or fabricated graph data.
+
+ROUND 1 → 2: reviewed all six screenshots at 1440/768/390. Fixed collapsed horizontal curve handles after coordinate projection and moved inversion labels away from the mobile HUD. Final self-assessment: design 7.9, usability 8.0, creativity 7.6, content 8.3, overall 7.9. Remaining compact axis/status text is the inspector's tiny-text warning. Sample palette intentionally uses two hue families; the dense macro capsules become more legible on zoom. No FPS benchmark is claimed.

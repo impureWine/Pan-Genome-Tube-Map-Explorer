@@ -2,12 +2,13 @@
 import { useRef, useState } from "react";
 import { ArrowDownToLine, Crosshair, Hand, RefreshCw, Unplug } from "lucide-react";
 import { clampRegion, format, zoomRegion } from "@/lib/region";
-import type { LOD, Region, Subgraph } from "@/lib/types";
+import TubeMapCanvas from "../../components/TubeMapCanvas";
+import type { Variant, LOD, Region, Subgraph } from "@/lib/types";
 
-export function Viewport({ region, total, lod, graph, loading, error, duration, visibleNodes, visibleEdges, sampleCount, onRegion, onRetry }: {
+export function Viewport({ region, total, lod, graph, loading, error, duration, visibleNodes, visibleEdges, sampleCount, selected, filters, onRegion, onRetry }: {
   region: Region; total: number; lod: LOD; graph: Subgraph | null; loading: boolean; error: string | null;
   duration: number | null; visibleNodes: number; visibleEdges: number; sampleCount: number;
-  onRegion: (region: Region) => void; onRetry: () => void;
+  selected: Set<string>; filters: Set<Variant>; onRegion: (region: Region) => void; onRetry: () => void;
 }) {
   const [cursor, setCursor] = useState<number | null>(null);
   const [panning, setPanning] = useState(false);
@@ -40,8 +41,8 @@ export function Viewport({ region, total, lod, graph, loading, error, duration, 
           e.preventDefault(); onRegion(zoomRegion(region, e.key === "-" ? 2 : 0.5, total));
         }
       }}>
-      <div className="coordinate-ruler" aria-hidden="true">{Array.from({ length: 5 }, (_, i) => <span key={i}>{format(Math.round(region.start + span * i / 4))}</span>)}</div>
-      <div className="viewport-center">
+      <TubeMapCanvas graph={graph} region={region} total={total} lod={lod} selected={selected} filters={filters} onRegion={onRegion} onCursor={setCursor} />
+      {(error || (!loading && graph?.nodes.length === 0)) &&       <div className="viewport-center">
         {error ? <><Unplug size={26} className="muted" /><h2>Genome service unavailable</h2><p>{error}</p><button className="secondary-button" onClick={onRetry}><RefreshCw size={15} /> Retry connection</button></> :
           <><div className="viewport-symbol"><Crosshair size={28} strokeWidth={1} /></div>
             <h2>{loading ? "Loading this region" : graph?.nodes.length ? "Your region is ready" : "No nodes in this region"}</h2>
@@ -49,6 +50,7 @@ export function Viewport({ region, total, lod, graph, loading, error, duration, 
             <div className="viewport-instructions"><Hand size={14} /> Drag to pan<span>·</span><span>+ / − to zoom</span></div>
           </>}
       </div>
+      }
       <div className="viewport-hud" aria-label="Subgraph statistics" aria-live="polite">
         <div><span>Returned nodes</span><strong data-testid="node-count">{graph ? format(graph.nodes.length) : "—"}</strong></div>
         <div><span>Returned edges</span><strong data-testid="edge-count">{graph ? format(graph.edges.length) : "—"}</strong></div>

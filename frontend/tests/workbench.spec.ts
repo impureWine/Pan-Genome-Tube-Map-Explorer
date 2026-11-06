@@ -12,7 +12,7 @@ test("real API, coordinate search, local filters and detail modes", async ({ pag
   expect(meta.ok()).toBeTruthy();
   expect((await meta.json()).samples).toHaveLength(6);
   await page.goto("/");
-  await expect(page.getByText("Your region is ready")).toBeVisible();
+  await expect(page.getByText("Subgraph connected")).toBeVisible();
   await expect(page.getByLabel("Show HG002", { exact: true })).toBeChecked();
   await region(page, "900-901");
   await expect(page.getByTestId("node-count")).toHaveText("4");
@@ -35,7 +35,7 @@ test("real API, coordinate search, local filters and detail modes", async ({ pag
 
 test("zoom, pointer coordinates, pan, minimap and reset", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("Your region is ready")).toBeVisible();
+  await expect(page.getByText("Subgraph connected")).toBeVisible();
   await page.getByRole("button", { name: "Zoom in", exact: true }).click();
   await expect(page.getByTestId("viewport-range")).toHaveText("2,000 — 4,000 bp");
   const viewport = page.getByRole("group", { name: /^Interactive genome viewport/ });
@@ -64,19 +64,19 @@ test("failed metadata and failed subgraph can be retried", async ({ page }) => {
   await expect(page.getByTestId("node-count")).toHaveText("—");
   await page.unroute("**/api/genome/meta");
   await page.getByRole("button", { name: "Retry connection" }).click();
-  await expect(page.getByText("Your region is ready")).toBeVisible();
+  await expect(page.getByText("Subgraph connected")).toBeVisible();
   await page.route("**/api/subgraph?*", route => route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ detail: "Subgraph temporarily unavailable" }) }));
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(page.getByText("Genome service unavailable")).toBeVisible();
   await page.unroute("**/api/subgraph?*");
   await page.getByRole("button", { name: "Retry connection" }).click();
-  await expect(page.getByText("Your region is ready")).toBeVisible();
+  await expect(page.getByText("Subgraph connected")).toBeVisible();
 });
 
 test("mobile controls, keyboard close and no horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 900 });
   await page.goto("/");
-  await expect(page.getByText("Your region is ready")).toBeVisible();
+  await expect(page.getByText("Subgraph connected")).toBeVisible();
   await expect(page.getByLabel("Show HG002", { exact: true })).not.toBeVisible();
   await page.getByRole("button", { name: "Open sample controls" }).click();
   await expect(page.getByLabel("Show HG002", { exact: true })).toBeVisible();
@@ -86,4 +86,30 @@ test("mobile controls, keyboard close and no horizontal overflow", async ({ page
   await region(page, "900-901");
   await expect(page.getByTestId("node-count")).toHaveText("4");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+});
+
+test("canvas tubes, semantic bases, wheel zoom and spotlight", async ({ page }) => {
+  const errors: string[] = []; page.on("pageerror", e => errors.push(e.message));
+  await page.goto("/");
+  const canvas = page.getByTestId("tube-map-canvas");
+  await expect.poll(() => canvas.getAttribute("data-tube-count").then(Number)).toBeGreaterThan(10);
+  await region(page, "900-901");
+  await expect.poll(() => canvas.getAttribute("data-base-count").then(Number)).toBeGreaterThan(0);
+  const pixel = await canvas.evaluate((el: HTMLCanvasElement) => {
+    const ctx = el.getContext("2d")!, dpr=el.width/el.clientWidth;
+    const x=Math.round(el.width*.4), data=ctx.getImageData(x,Math.round(40*dpr),1,el.height-Math.round(40*dpr)).data;
+    for(let i=0;i<data.length;i+=4) if(data[i+1]>150 && data[i+2]>150 && data[i]<190) return {x:x/dpr,y:40+i/4/dpr};
+    return null;
+  });
+  expect(pixel).not.toBeNull();
+  const box=(await canvas.boundingBox())!;
+  await page.mouse.move(box.x+pixel!.x,box.y+pixel!.y);
+  await expect(page.getByRole("tooltip")).toContainText("Node");
+  await expect.poll(()=>canvas.getAttribute("data-hover-samples")).not.toBe("");
+  await page.getByRole("button",{name:"Glow on",exact:true}).click();
+  await expect(page.getByRole("button",{name:"Glow off",exact:true})).toHaveAttribute("aria-pressed","false");
+  await page.mouse.move(box.x+box.width*.5,box.y+box.height*.5);
+  await page.mouse.wheel(0,120);
+  await expect(page.getByTestId("viewport-range")).not.toHaveText("900 — 901 bp");
+  expect(errors).toEqual([]);
 });

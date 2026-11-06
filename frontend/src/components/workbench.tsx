@@ -120,7 +120,7 @@ export function Workbench() {
           <button className="text-button refresh-button" onClick={() => setRevision(v => v + 1)}><RefreshCw size={14} className={loading ? "refreshing" : ""} />Refresh</button>
         </div>
         <Viewport region={region} total={total} lod={lod} graph={graph} loading={loading} error={error} duration={remote.duration}
-          visibleNodes={visibleNodes} visibleEdges={visibleEdges} sampleCount={selected.size} onRegion={navigate} onRetry={() => setRevision(v => v + 1)} />
+          selected={selected} filters={filters} visibleNodes={visibleNodes} visibleEdges={visibleEdges} sampleCount={selected.size} onRegion={navigate} onRetry={() => setRevision(v => v + 1)} />
         <Minimap region={region} total={total} onChange={navigate} />
       </div>
     </div>

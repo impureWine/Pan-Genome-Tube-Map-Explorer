@@ -191,3 +191,28 @@ curl.exe --fail "http://127.0.0.1:3000/api/subgraph?start=900&end=901&lod=micro"
 验证记录：生产构建、ESLint、TypeScript 全部通过；4 个浏览器测试通过；1440/768/390 三尺寸视觉检查为 0 FAIL、2 WARN（紧凑元数据字号、按本步要求保留的开放网格）。设计方向与复核说明见 [`frontend/DESIGN.md`](frontend/DESIGN.md)。框架配置依据 [Next.js 安装文档](https://nextjs.org/docs/app/getting-started/installation) 和 [Tailwind Next.js 集成文档](https://tailwindcss.com/docs/installation/framework-guides/nextjs)。
 
 ![Step 3 desktop workspace](frontend/docs/step3-desktop.jpg)
+
+## Step 4：Canvas 2D 地铁图
+
+完整引擎：`frontend/components/TubeMapCanvas.tsx`，通过现有 `viewport.tsx` 集成。无需新增依赖，继续使用 Step 3 的安装与启动命令。中央区域已替换为真实 Canvas，不再是占位图。
+
+- 分层绘制动态网格、参考基线、样本贝塞尔轨道、胶囊、变异标签与自适应 1/2/5 标尺。
+- 鼠标拖动按参考坐标平移；滚轮以鼠标位置为锚点缩放，坐标范围限制在有效参考内。变更复用 160 ms 防抖请求，加载时保留上次图形以响应相机移动；HUD 仅显示当前窗口的已确认返回值。
+- 用参考节点建立分段坐标映射，将后端局部布局映射到稳定的参考相机。连接保留水平贝塞尔手柄，参考间隙被压缩时保留至少 8 px 的转角手柄。
+- 样本颜色与侧栏保持一致；Glow on/off 控制轨道光晕。Path2D 预计算，requestAnimationFrame 驱动绘制与追光插值，静止时跳过重绘，DPR 限制为 2，卸载取消动画与监听。
+- 悬停轨道使用 isPointInStroke 命中检测，选中样本全路径保持高亮，其他样本渐暗至 0.15；胶囊空白处命中会高亮经过它的所有已显示样本。Tooltip 显示样本、节点 ID、长度和变异类型；连边 Tooltip 的节点为该连接的相邻路径节点。
+- macro 隐藏碱基；micro 在序列已返回、且每个字符至少占 11 px 时绘制彩色 A/T/C/G。未知序列 `*` 不伪造碱基。单碱基窗口仍可滚轮缩小返回宏观视图。
+- 样本和变异过滤应用到实际轨道与胶囊；倒位标记沿用后端的倒位边分类。
+
+验收：启动后端与前端，在默认窗口查看 `+500bp INS` 和下方 `INV` 回环；拖动画布、滚轮缩放、切换 Glow；搜索 `900-901` 查看 SNP 两条序列与碱基；沿轨道移动鼠标查看追光和 Tooltip。侧栏关闭 SNP 或样本后对应路径应消失。键盘方向键与加减缩放继续可用。
+
+```powershell
+cd frontend
+npm run build
+npm run lint
+npm run start
+# 在另一个终端运行，保留真实后端服务
+npm run test:e2e -- --output="../.taste-skill/test-$(Get-Date -Format yyyyMMdd-HHmmss)"
+```
+
+浏览器测试共 5 项，包含真实 Canvas 像素、碱基字符数量、滚轮相机、悬停 Tooltip、显隐及原工作台回归。当前验证基于六样本模拟图；未宣称 WebGL 加速、固定帧率或百万路径性能。大图仍受 Step 2 的 5000 节点查询限制，命中检测线性扫描局部路径。
