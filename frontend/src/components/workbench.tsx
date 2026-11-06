@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { ExportMenu } from "./export-menu";
 import { VariantInspector } from "./variant-inspector";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, Dna, Focus, Minus, PanelLeftOpen, Plus, RefreshCw, Search } from "lucide-react";
@@ -15,6 +16,9 @@ export function Workbench() {
   const [inspected,setInspected]=useState<string|null>(null);
   const [revision, setRevision] = useState(0);
   const metadata = useGenomeAPI<GenomeMeta>("/api/genome/meta", revision);
+  const presets=useGenomeAPI<{id:string;title:string;start:number;end:number}[]>("/api/bookmarks",revision);
+  const flight=useRef(0);
+  useEffect(()=>()=>cancelAnimationFrame(flight.current),[]);
   const meta = metadata.data;
   const total = meta?.total_length ?? 0;
   const [requested, setRequested] = useState<Region>({ start: 1000, end: 5000 });
@@ -58,7 +62,14 @@ export function Workbench() {
     return () => { document.removeEventListener("keydown", trap); previous?.focus(); };
   }, [mobileSidebar]);
 
-  function navigate(next: Region) { setRequested(next); setInput(null); setInputError(null); }
+  function navigate(next: Region) { cancelAnimationFrame(flight.current); setRequested(next); setInput(null); setInputError(null); }
+  function flyTo(target:Region){
+    cancelAnimationFrame(flight.current);
+    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){navigate(target);return;}
+    const from={...region},started=performance.now();setInput(null);setInputError(null);
+    function step(now:number){const t=Math.min(1,(now-started)/700),ease=t*t*(3-2*t);const start=from.start+(target.start-from.start)*ease,end=from.end+(target.end-from.end)*ease;setRequested(clampRegion(start,end-start,total));if(t<1)flight.current=requestAnimationFrame(step);}
+    flight.current=requestAnimationFrame(step);
+  }
   function toggleSamples(ids: string[]) {
     const next = new Set(selected);
     const remove = ids.every(id => next.has(id));
@@ -114,6 +125,7 @@ export function Workbench() {
         {(["auto", "macro", "micro"] as LODMode[]).map(value => <button key={value} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === "auto" ? "Auto" : value === "macro" ? "Macro" : "Base level"}</button>)}
       </div>
     </div>
+    <div className="presentation-toolbar"><label htmlFor="tour">Variant tour</label><select id="tour" value="" disabled={!presets.data?.length} onChange={e=>{const target=presets.data?.find(p=>p.id===e.target.value);if(target)flyTo(target);}}><option value="">Choose a scene…</option>{presets.data?.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}</select>{presets.error&&<span role="status">Bookmarks unavailable</span>}<ExportMenu region={region} selected={selected} ready={Boolean(graph)} /></div>
     <div className="render-mode-bar" role="group" aria-label="Rendering mode">{(["individual","frequency","phenotype"] as const).map(m=><button key={m} aria-pressed={renderMode===m} onClick={()=>setRenderMode(m)}>{m==="individual"?"Individual tubes":m==="frequency"?"Allele frequency":"Case / Control"}</button>)}<span>{renderMode==="phenotype"?"Case orange · Control blue · other groups excluded":"Width = selected sample-path carrier frequency"}</span></div>
     {inspected && <VariantInspector key={inspected} nodeId={inspected} onClose={()=>setInspected(null)} />}
     <div className={`workspace-body ${sidebar ? "" : "sidebar-collapsed"} ${mobileSidebar ? "mobile-sidebar-open" : ""}`}>

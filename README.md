@@ -260,3 +260,60 @@ npm run test:e2e -- --output="../.taste-skill/test-$(Get-Date -Format yyyyMMdd-H
 ```
 
 后端 16 项测试通过；前端 6 个场景覆盖原功能、模式切换、线宽比例、详情和复制。新增代码位于 `backend/phenotype.py`、`frontend/src/components/variant-inspector.tsx`，聚合绘制集成在 `frontend/components/TubeMapCanvas.tsx`。
+
+## Step 6：倒位演示、书签与科研导出
+
+新增功能：
+
+- 倒位边及 Individual 模式中的反向链段绘制流动虚线与沿曲线移动的方向箭头，并保留 `🔁 INV` 标识；Inversion 过滤器同时控制反向链段。系统启用 reduced motion 时冻结动画。
+- Variant tour 从 `/api/bookmarks` 读取数据库中实际存在的 500 bp 插入、倒位和 SNP 替代气泡。选择后用 700 ms smoothstep（ease-in-out）平移缩放，手动导航会中断当前动画；reduced motion 下直接跳转。当前样例中的 SNP 是二等位气泡，菜单没有虚构多等位场景。
+- **PNG 4×**：按当前画布 CSS 宽高的四倍重绘后编码，保留当前视口、模式、样本/变异过滤、Glow 和动画快照。不是放大低分辨率截图；导出不包含外围控件与 DOM Tooltip。
+- **SVG**：记录同一绘制管线的路径、胶囊、标尺、文字、裁剪和 SVG 光晕滤镜。文件包含真实可编辑矢量路径，不用内嵌 PNG 冒充矢量。Public Sans 未嵌入文件，其他电脑可安装该字体或使用 Arial 回退。
+- **Export GFA**：导出参考窗口召回的完整节点与上下文、保留方向/overlap 的连边，以及当前所选样本的连续片段路径。
+- **Export FASTA**：对当前选择的样本路径片段拼接序列；负链步骤反向互补，已知 `nM` 重叠会扣除。缺失序列和非 M-only/未知 overlap 明确拒绝精确拼接，不静默猜测。
+
+局部数据导出以**完整图节点**为单位，不按参考 bp 切断变异序列；FASTA 头部注明 `full_segments=true`，非连续片段分别为 `#fragment1`、`#fragment2`，不会跨缺口拼接。所选样本控制 GFA/FASTA；变异显示过滤器只影响图像，不删除导出图中的生物学拓扑。导出 GFA 包含所选节点间的诱导连边。文件名含参考区间，图像文件名还含模式。
+
+### 启动最终演示版本
+
+```powershell
+# 终端 A：仓库根目录，首次运行按 Step 2 安装依赖
+.venv\Scripts\python -m uvicorn backend.main:app --port 8002
+
+# 终端 B：frontend 目录
+$env:BACKEND_URL='http://127.0.0.1:8002'
+npm ci
+npm run build
+npm run start -- --port 3002
+```
+
+打开 http://127.0.0.1:3002。也可沿用 8000/3000 默认端口，启动前设置对应 BACKEND_URL，并重新构建；需重启后端加载新增路由。
+
+### 完整端到端演示清单
+
+1. 首屏展示六条独立样本轨道，移动鼠标展示全路径追光和 Tooltip。
+2. Variant tour 选择 **500 bp insertion**，观察 700 ms 缓动和视口/标尺/迷你图同步；插入位于 1901 bp，书签范围 `[1651,2151)`。
+3. 切换 **Allele frequency**，展示 33.3% Alt / 66.7% Ref；切换 **Case / Control**，展示病例橙红插入流和对照蓝色参考流。
+4. 点击插入胶囊，展示 Case 2/4、Control 0/2、携带样本与标为 SIMULATED 的注释；Copy FASTA 后粘贴验证，关闭抽屉。
+5. Variant tour 选择 **Inversion loop**，展示流动虚线、方向箭头和 INV 徽章。关闭 Inversion 过滤器再打开，验证回环/反向段和特效显隐。
+6. 切换 Glow，拖动画布或滚轮缩放；选择 **SNP alternative bubble**，继续缩放或输入 `900-901`，展示 A/T/C/G 彩色碱基。
+7. 点击 **PNG 4×** 下载，检查图像像素宽高是画布 CSS 宽高的四倍；点击 **SVG**，用浏览器/矢量编辑器打开并检查路径。当前动画时刻会被固化为静态快照。
+8. 保持所需样本勾选，点击 **Export GFA** 与 **Export FASTA**。GFA 包含 H/S/L/P 行；FASTA 每个片段有独立 header，倒位路径包含正确的反向互补序列。
+9. 重置到全图，再勾选一个样本（例如 HG011）导出 FASTA，核对单样本结果；未知节点序列/不支持的 overlap 会显示错误信息。
+10. 在 390 px 手机宽度打开控制舱、切换模式和导出，页面可纵向滚动。刷新后恢复默认演示状态。
+
+API 与回归验收：
+
+```powershell
+curl.exe --fail "http://127.0.0.1:8002/api/bookmarks"
+curl.exe --fail "http://127.0.0.1:8002/api/export?start=1651&end=2151&format=gfa&sample=HG005" -o demo-slice.gfa
+curl.exe --fail "http://127.0.0.1:8002/api/export?start=0&end=5901&format=fasta&sample=HG011" -o demo-HG011.fasta
+.venv\Scripts\python -m unittest backend.test_export_suite backend.test_phenotype backend.test_layout_api backend.test_data_layer -v
+# frontend 目录，保留演示服务运行
+$env:FRONTEND_URL='http://127.0.0.1:3002'
+npm run test:e2e -- --output="../.taste-skill/test-$(Get-Date -Format yyyyMMdd-HHmmss)"
+```
+
+后端 20 项测试、前端 7 个场景覆盖整条演示流程；新增场景会实际下载四种文件、检查 PNG 像素尺寸、检查 SVG XML/矢量路径并确认其没有内嵌 image。没有固定 FPS、300 DPI 元数据或百万路径性能保证；图像按像素尺寸/矢量几何交付，序列导出范围按完整节点定义。
+
+新增文件：`backend/export_suite.py`、`backend/test_export_suite.py`、`frontend/src/lib/svg-recorder.ts`、`frontend/src/components/export-menu.tsx`。修改文件：`backend/main.py`、`frontend/components/TubeMapCanvas.tsx`、`frontend/src/components/workbench.tsx`、`frontend/src/app/globals.css`、`frontend/tests/workbench.spec.ts`，以及本 README 和设计记录。

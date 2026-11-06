@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { Bezier, LOD, Region, Subgraph, Variant, LayoutNode } from "../src/lib/types";
+import { recordSVG, downloadBlob } from "../src/lib/svg-recorder";
 import { clampRegion, format, zoomRegion } from "../src/lib/region";
 
 const COLORS = ["#67e8f9", "#22d3ee", "#a5f3fc", "#fbbf24", "#fcd34d", "#f59e0b"];
@@ -11,6 +12,7 @@ type Hit = { samples: string[]; node: LayoutNode; type: string; x: number; y: nu
 
 export default function TubeMapCanvas(props: Props) {
   const { graph: incomingGraph, region, lod, selected, filters, total, onRegion, onCursor, mode, onInspect } = props;
+  const exportRequest=useRef<"png"|"svg"|null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const retained = useRef<Subgraph | null>(null);
   const camera = useRef(region);
@@ -20,6 +22,7 @@ export default function TubeMapCanvas(props: Props) {
   const [glow, setGlow] = useState(true);
   const hover = useRef<Hit | null>(null);
   const [size, setSize] = useState({ width: 1, height: 1 });
+  useEffect(()=>{function request(event:Event){const format=(event as CustomEvent).detail;if(incomingGraph&&(format==="png"||format==="svg"))exportRequest.current=format;}window.addEventListener("tube-export",request);return()=>window.removeEventListener("tube-export",request);},[incomingGraph]);
   useEffect(() => {
     const el = canvas.current;
     if (!el) return;
@@ -31,8 +34,10 @@ export default function TubeMapCanvas(props: Props) {
   }, []);
   useEffect(() => { camera.current = region; }, [region]);
   useEffect(() => {
-    const el = canvas.current, ctx = el?.getContext("2d");
-    if (!el || !ctx) return;
+    const el = canvas.current, realContext = el?.getContext("2d");
+    if (!el || !realContext) return;
+    const real=realContext;
+    let ctx:CanvasRenderingContext2D=real;
     if (incomingGraph) retained.current = incomingGraph;
     const graph = incomingGraph ?? retained.current;
     const { width: w, height: h } = size;
@@ -58,8 +63,9 @@ export default function TubeMapCanvas(props: Props) {
       n.length === 1 && (n.ref_end ?? 0)-(n.ref_start ?? 0) === 1 ? "SNP" : n.ref_start===n.ref_end ? "InDel" : null : null;
     const nodeVisible = (n: LayoutNode) => n.tracks.some(t => selected.has(t.sample_id)) && (!kind(n) || filters.has(kind(n)!));
     const nodes = graph?.nodes.filter(nodeVisible).map(n => ({ n, x:sx(n.x), y:sy(n.y), width:Math.max(3,sx(n.x+n.width)-sx(n.x)), height:Math.max(20,n.height*scaleY) })) ?? [];
-    const curvePath = (c: Bezier) => { const p=new Path2D(); p.moveTo(sx(c.x1),sy(c.y1)); p.bezierCurveTo(sx(c.x1)+Math.sign(c.cp1x-c.x1)*Math.max(8,Math.abs(sx(c.cp1x)-sx(c.x1))),sy(c.cp1y),sx(c.x2)+Math.sign(c.cp2x-c.x2)*Math.max(8,Math.abs(sx(c.cp2x)-sx(c.x2))),sy(c.cp2y),sx(c.x2),sy(c.y2)); return p; };
-    const tubes: { path: Path2D; sample: string; color: string; node: LayoutNode; type: string; width?: number; members?: string[] }[] = [];
+    const pathData=new WeakMap<Path2D,string>();
+    const curvePath = (c: Bezier) => {const x1=sx(c.x1),y1=sy(c.y1),x2=sx(c.x2),y2=sy(c.y2),cp1x=x1+Math.sign(c.cp1x-c.x1)*Math.max(8,Math.abs(sx(c.cp1x)-x1)),cp2x=x2+Math.sign(c.cp2x-c.x2)*Math.max(8,Math.abs(sx(c.cp2x)-x2));const data=`M ${x1} ${y1} C ${cp1x} ${sy(c.cp1y)} ${cp2x} ${sy(c.cp2y)} ${x2} ${y2}`;const p=new Path2D(data);pathData.set(p,data);return p; };
+    const tubes: { path: Path2D; sample: string; color: string; node: LayoutNode; type: string; width?: number; members?: string[]; curve?: Bezier }[] = [];
     const edges = new Map(graph?.edges.map(e => [e.id,e]) ?? []);
     graph?.tracks.forEach((t,index) => {
       if (!selected.has(t.sample_id)) return;
@@ -72,10 +78,10 @@ export default function TubeMapCanvas(props: Props) {
             const count=edge?.segments.length ?? 1;
             const type=edge?.sv_type === "inversion" ? "Inversion" : edge?.sv_type === "insertion" || edge?.sv_type === "deletion" ? "InDel" : kind(n!) ?? kind(nodeMap.get(f.steps[i-1].node_id)!);
             const curves=f.segments.slice(cursor,cursor+count); cursor+=count;
-            if (n && (!type || filters.has(type))) curves.forEach(c => tubes.push({ path:curvePath(c),sample:t.sample_id,color:COLORS[index%COLORS.length],node:n,type:type??"Reference" }));
+            if (n && (!type || filters.has(type))) curves.forEach(c => tubes.push({ path:curvePath(c),curve:c,sample:t.sample_id,color:COLORS[index%COLORS.length],node:n,type:type??"Reference" }));
           }
           const c=f.segments[cursor++];
-          if (n && c && nodeVisible(n)) tubes.push({path:curvePath(c),sample:t.sample_id,color:COLORS[index%COLORS.length],node:n,type:kind(n)??"Reference"});
+          if (n && c && nodeVisible(n) && (step.orientation!=="-"||filters.has("Inversion"))) tubes.push({path:curvePath(c),curve:c,sample:t.sample_id,color:COLORS[index%COLORS.length],node:n,type:step.orientation==="-"?"Inversion":kind(n)??"Reference"});
         });
       });
     });
@@ -91,7 +97,7 @@ export default function TubeMapCanvas(props: Props) {
         const add=(c:Bezier,node:LayoutNode,members:string[],type:string)=>{
           if(!members.length)return;
           const shifted={...c,y1:c.y1+group.offset,cp1y:c.cp1y+group.offset,cp2y:c.cp2y+group.offset,y2:c.y2+group.offset};
-          tubes.push({path:curvePath(shifted),sample:group.name,color:group.color,node,type,members,width:(mode==="frequency"?24:12)*members.length/ids.size});
+          tubes.push({path:curvePath(shifted),curve:shifted,sample:group.name,color:group.color,node,type,members,width:(mode==="frequency"?24:12)*members.length/ids.size});
         };
         for(const n of graph.nodes){if(!nodeVisible(n))continue;const members=n.tracks.map(t=>t.sample_id).filter(id=>ids.has(id));
           add({x1:n.x,y1:n.y,cp1x:n.x+n.width/3,cp1y:n.y,cp2x:n.x+n.width*2/3,cp2y:n.y,x2:n.x+n.width,y2:n.y},n,members,kind(n)??"Reference");}
@@ -116,10 +122,15 @@ export default function TubeMapCanvas(props: Props) {
       frame=requestAnimationFrame(draw);
       if(document.hidden) return;
       if(lastHover!==hover.current) {remaining=1;lastHover=hover.current;}
-      if(remaining<.002) return;
+      const snapshot=exportRequest.current;
+      const moving=filters.has("Inversion")&&tubes.some(t=>t.type==="Inversion")&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if(remaining<.002 && !moving && !snapshot) return;
+      const scale=snapshot==="png"?4:dpr;
+      if(snapshot==="png"){el!.width=Math.round(w*4);el!.height=Math.round(h*4);}
+      const recorder=snapshot==="svg"?recordSVG(real!,pathData,w,h):null;ctx=recorder?.context??real;
       const dt=Math.min(50,now-lastTime); lastTime=now;
       remaining*=Math.exp(-Math.max(16,dt)/45);
-      ctx!.setTransform(dpr,0,0,dpr,0,0); ctx!.clearRect(0,0,w,h);
+      ctx!.setTransform(scale,0,0,scale,0,0); ctx!.clearRect(0,0,w,h);
       ctx!.fillStyle="#0b0f17";ctx!.fillRect(0,0,w,h);
       ctx!.strokeStyle="#182130";ctx!.lineWidth=.5;ctx!.beginPath();
       const offset=-(region.start/span*w)%32;
@@ -140,6 +151,12 @@ export default function TubeMapCanvas(props: Props) {
         ctx!.lineCap=mode==="individual"?"round":"butt";ctx!.lineWidth=t.width??2.2;ctx!.stroke(t.path);ctx!.shadowBlur=0;
       }
       ctx!.globalAlpha=1;
+      for(const t of tubes.filter(t=>t.type==="Inversion")){
+        ctx!.globalAlpha=opacity.get(t.sample)??1;ctx!.strokeStyle="#f8fafc";ctx!.lineWidth=1;ctx!.setLineDash([7,8]);ctx!.lineDashOffset=moving?-now/35:0;ctx!.stroke(t.path);ctx!.setLineDash([]);ctx!.lineDashOffset=0;
+        if(t.curve){const c=t.curve,f=moving?(now%1800)/1800:.5,u=1-f,x=sx(u*u*u*c.x1+3*u*u*f*c.cp1x+3*u*f*f*c.cp2x+f*f*f*c.x2),y=sy(u*u*u*c.y1+3*u*u*f*c.cp1y+3*u*f*f*c.cp2y+f*f*f*c.y2),dx=3*u*u*(sx(c.cp1x)-sx(c.x1))+6*u*f*(sx(c.cp2x)-sx(c.cp1x))+3*f*f*(sx(c.x2)-sx(c.cp2x)),dy=3*u*u*(sy(c.cp1y)-sy(c.y1))+6*u*f*(sy(c.cp2y)-sy(c.cp1y))+3*f*f*(sy(c.y2)-sy(c.cp2y)),angle=Math.atan2(dy,dx);const p=new Path2D();const data=`M ${x-6*Math.cos(angle-.5)} ${y-6*Math.sin(angle-.5)} L ${x} ${y} L ${x-6*Math.cos(angle+.5)} ${y-6*Math.sin(angle+.5)}`;pathData.set(p,data);p.addPath(new Path2D(data));ctx!.stroke(p);}
+      }
+      ctx!.globalAlpha=1;
+      el!.dataset.antsPhase=moving?String(Math.floor(now/35)):"static";
       let baseCount=0;
       for(const b of nodes){
         if(b.x>w || b.x+b.width<0)continue;
@@ -154,7 +171,7 @@ export default function TubeMapCanvas(props: Props) {
           }
         }else if(!b.n.is_backbone){ctx!.font="12px 'Public Sans',sans-serif";ctx!.textAlign="left";ctx!.fillStyle="#e9edf5";ctx!.fillText(kind(b.n)==="InDel"?`+${b.n.length}bp INS`:kind(b.n)==="SNP"?"SNP":b.n.id,b.x,b.y-b.height/2-9);}
       }
-      if(filters.has("Inversion")) graph?.edges.filter(e=>e.sv_type==="inversion" && e.sample_ids.some(s=>selected.has(s))).forEach(e=>{const c=e.segments[1];if(c){ctx!.fillStyle="#fbbf24";ctx!.font="12px 'Public Sans',sans-serif";ctx!.fillText("↶ INV",Math.max(8,Math.min(w-55,sx((c.x1+c.x2)/2))),sy(c.y1)+22);}});
+      if(filters.has("Inversion")) graph?.edges.filter(e=>e.sv_type==="inversion" && e.sample_ids.some(s=>selected.has(s))).forEach(e=>{const c=e.segments[1];if(c){ctx!.fillStyle="#fbbf24";ctx!.font="12px 'Public Sans',sans-serif";ctx!.fillText("🔁 INV",Math.max(8,Math.min(w-55,sx((c.x1+c.x2)/2))),sy(c.y1)+22);}});
       if(mode==="frequency" && graph){ctx!.fillStyle="#e9edf5";ctx!.font="12px 'Public Sans',sans-serif";ctx!.textAlign="left";
         const denominator=graph.tracks.filter(t=>selected.has(t.sample_id)).length;
         nodes.filter(b=>!b.n.is_backbone && b.x+b.width>=0 && b.x<w).forEach(b=>{const altIds=new Set(b.n.tracks.filter(t=>selected.has(t.sample_id)).map(t=>t.sample_id));
@@ -170,6 +187,14 @@ export default function TubeMapCanvas(props: Props) {
       const step=[1,2,5,10].map(v=>v*power).find(v=>v>=raw)??power*10;
       for(let bp=Math.ceil(region.start/step)*step;bp<region.end;bp+=step){const x=(bp-region.start)/span*w;ctx!.textAlign=x<30?"left":x>w-40?"right":"center";ctx!.fillText(format(bp),Math.max(6,Math.min(w-6,x)),20);ctx!.fillRect(x,28,1,6);}
       el!.dataset.renderMode=mode;el!.dataset.flowWidths=JSON.stringify(tubes.map(t=>t.width??2.2));
+      if(snapshot){
+        exportRequest.current=null;
+        const filename=`pangenome-${region.start}-${region.end}-${mode}`;
+        if(recorder)downloadBlob(new Blob([recorder.serialize()],{type:"image/svg+xml"}),filename+".svg");
+        else el!.toBlob(blob=>{if(blob)downloadBlob(blob,filename+".png");},"image/png");
+        ctx=real;
+        if(snapshot==="png"){el!.width=Math.round(w*dpr);el!.height=Math.round(h*dpr);remaining=1;}
+      }
       el!.dataset.baseCount=String(baseCount);el!.dataset.tubeCount=String(tubes.length);el!.dataset.hoverSamples=hover.current?.samples.join(",")??"";
     }
     frame=requestAnimationFrame(draw);
@@ -189,6 +214,7 @@ export default function TubeMapCanvas(props: Props) {
         else{const next=hitTest.current(x,y);hover.current=next;setHit(next);}}}
       onPointerUp={e=>{const rect=e.currentTarget.getBoundingClientRect();if(drag.current&&Math.abs(e.clientX-drag.current.x)<4){const found=hitTest.current(e.clientX-rect.left,e.clientY-rect.top);if(found)onInspect(found.node.id);}drag.current=null;}} onPointerCancel={()=>{drag.current=null;}} onLostPointerCapture={()=>{drag.current=null;}}
       onPointerLeave={()=>{hover.current=null;setHit(null);onCursor(null);}} />
+
     <button className="canvas-glow" aria-pressed={glow} onClick={()=>setGlow(v=>!v)}>Glow {glow?"on":"off"}</button>
     {hit && <div role="tooltip" className="tube-tooltip" style={{left:Math.min(size.width-210,Math.max(8,hit.x+14)),top:Math.min(size.height-120,Math.max(38,hit.y+16))}}>
       <strong>{hit.samples.join(" · ")}</strong><span>Node {hit.node.id}</span><span>{format(hit.node.length)} bp · {hit.type}</span>

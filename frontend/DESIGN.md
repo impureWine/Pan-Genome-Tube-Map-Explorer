@@ -59,3 +59,11 @@ ROUND 1 → 2: reviewed all six screenshots at 1440/768/390. Fixed collapsed hor
 Kept Data terminal direction and seed 1922461817, no redraw. The core device is now a frequency-scaled branch: one selected-cohort cyan flow versus separated Case-orange and Control-blue flows. The exact phenotype colors and glass inspector are explicit user requirements. All carriers and denominators are computed, and mock annotations are labelled SIMULATED.
 
 Reviewed desktop/tablet/mobile fold and page screenshots, plus frequency, phenotype and inspector captures. The main frame remains aligned and the mode bar wraps on mobile. Inspector measurements: 0 FAIL, 1 WARN for compact axis/status text. The drawer shows real sequence and group denominators; clipboard copy was verified in the browser. Self-assessment: design 7.9, usability 8.0, creativity 7.8, content 8.2 → overall 8.0. No photos or generated figures. Remaining limitation: the tiny synthetic cohort supports descriptive carrier proportions, not inferential phenotype association.
+
+## Step 6 review
+
+Kept Data terminal seed 1922461817 and existing Public Sans, no redraw. The final signature is the inversion's own direction: dashed motion and moving arrowheads distinguish the return loop; the user-requested INV badge and glow remain data marks. Bookmarks come from actual database events, not invented multi-allelic scenes.
+
+First round: viewed all desktop/tablet/mobile screenshots, plus the actual 4× PNG and a browser rendering of the exported SVG. Moved image export controls out of the plot because they covered the insertion label on mobile. Unified the four formats into one toolbar. Dense sidebar controls remain scrollable, and phone toolbars wrap.
+
+SVG preserves editable geometry and filters; PNG is redrawn at 4×. The synthetic GFA fixture is the sole research data source. The remaining tiny-text warning is axis/status metadata at 11–12 px. Self-assessment after the targeted fix: design 7.9, usability 8.1, creativity 7.9, content 8.3 → overall 8.0. No external photos or generated imagery were added. Sequence export explicitly uses full segments and separate contiguous fragments.

@@ -140,3 +140,28 @@ test("frequency modes and node inspector", async ({page,request},testInfo)=>{
   await page.getByRole("button",{name:"Close variant details"}).click();
   await expect(page.getByLabel("Variant details",{exact:true})).not.toBeVisible();
 });
+
+test("bookmark tour, animated inversion and four export formats",async({page,request},testInfo)=>{
+  const fs=await import("node:fs/promises");
+  await page.goto("/");const canvas=page.getByTestId("tube-map-canvas");
+  await expect.poll(()=>canvas.getAttribute("data-tube-count").then(Number)).toBeGreaterThan(10);
+  const phase=await canvas.getAttribute("data-ants-phase");
+  await expect.poll(()=>canvas.getAttribute("data-ants-phase")).not.toBe(phase);
+  const presets=await (await request.get("/api/bookmarks")).json();
+  const insertion=presets.find((p:{id:string})=>p.id==="insertion");
+  await page.getByLabel("Variant tour",{exact:true}).selectOption("insertion");
+  await expect(page.getByTestId("viewport-range")).toHaveText(`${insertion.start.toLocaleString("en-US")} — ${insertion.end.toLocaleString("en-US")} bp`);
+  await expect(page.getByText("Subgraph connected",{exact:true})).toBeVisible();
+  for(const [label,extension] of [["PNG 4×","png"],["SVG","svg"],["Export GFA","gfa"],["Export FASTA","fasta"]]){
+    const pending=page.waitForEvent("download");await page.getByRole("button",{name:label,exact:true}).click();const download=await pending;
+    expect(download.suggestedFilename()).toMatch(new RegExp(`\\.${extension}$`));
+    const destination=testInfo.outputPath(`snapshot.${extension}`);await download.saveAs(destination);const bytes=await fs.readFile(destination);
+    if(extension==="png"){const box=(await canvas.boundingBox())!;expect(bytes.readUInt32BE(16)).toBe(Math.round(box.width*4));expect(bytes.readUInt32BE(20)).toBe(Math.round(box.height*4));}
+    if(extension==="svg"){const xml=bytes.toString();expect(xml).toContain("<path");expect(xml).not.toContain("<image");expect(await page.evaluate(xml=>{const doc=new DOMParser().parseFromString(xml,"image/svg+xml");return doc.querySelectorAll("parsererror").length;},xml)).toBe(0);}
+    if(extension==="gfa")expect(bytes.toString()).toContain("H\tVN:Z:1.1");
+    if(extension==="fasta")expect(bytes.toString()).toMatch(/^>/);
+  }
+  await page.getByLabel("Variant tour",{exact:true}).selectOption("inversion");
+  await expect(page.getByText("Subgraph connected",{exact:true})).toBeVisible();
+  await page.screenshot({path:testInfo.outputPath("tour-inversion.png")});
+});

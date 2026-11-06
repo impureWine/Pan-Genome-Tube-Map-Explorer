@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .layout_engine import LayoutTooLarge, genome_meta, layout_subgraph
 from .schemas import GenomeMeta, LOD, Subgraph
 from .phenotype import node_details
+from .export_suite import bookmarks, export_region
+from fastapi.responses import Response
 
 
 def create_app(database_path: str | Path | None = None) -> FastAPI:
@@ -59,6 +61,24 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
             if result is None:
                 raise HTTPException(404, 'Node not found')
             return result
+
+    @application.get('/api/bookmarks')
+    def presets():
+        with database() as conn:
+            return bookmarks(conn)
+
+    @application.get('/api/export')
+    def export(start: int = Query(ge=0), end: int = Query(gt=0, le=2147483647),
+               format: str = Query(pattern='^(gfa|fasta)$'), sample: list[str] | None = Query(default=None)):
+        if start >= end:
+            raise HTTPException(422, 'end must be greater than start')
+        with database() as conn:
+            try:
+                content = export_region(conn,start,end,format,sample)
+            except (ValueError, LayoutTooLarge) as exc:
+                raise HTTPException(422,str(exc)) from exc
+        return Response(content,media_type='text/plain',headers={
+            'Content-Disposition': f'attachment; filename="pangenome-{start}-{end}.{format}"'})
 
     return application
 
