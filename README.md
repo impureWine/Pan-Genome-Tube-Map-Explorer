@@ -216,3 +216,47 @@ npm run test:e2e -- --output="../.taste-skill/test-$(Get-Date -Format yyyyMMdd-H
 ```
 
 浏览器测试共 5 项，包含真实 Canvas 像素、碱基字符数量、滚轮相机、悬停 Tooltip、显隐及原工作台回归。当前验证基于六样本模拟图；未宣称 WebGL 加速、固定帧率或百万路径性能。大图仍受 Step 2 的 5000 节点查询限制，命中检测线性扫描局部路径。
+
+## Step 5：群体频率与表型透视
+
+顶部新增三模式切换：
+
+- **Individual tubes**：保留独立样本轨道。
+- **Allele frequency**：按同一节点/物理连边汇聚，使用 `lineWidth = 24 × unique_selected_carriers / selected_samples`，无最小线宽截断。分支显示 Ref/Alt 比例，缺失/倒位边另标百分比。重复访问同节点的样本只计一次。参考比例由当前局部参考节点或插入旁路连边的实际样本集合计算，未观察到的路径不假定为参考。
+- **Case / Control**：组内分别归一化，`lineWidth = 12 × group_carriers / group_selected_samples`。Case 为 `#F97316`，Control 为 `#38BDF8`；两条流垂直分离。空组不绘制，其他组不参与此对比，工具栏明确提示。改变侧栏选择会重新计算画布分母。
+
+这里的 AF 是**样本路径携带比例**：当前数据库没有倍性、基因型或缺失调用状态，不能将它当作二倍体基因型等位基因频率。每条带方向的样本路径仍来自真实 GFA 导入结果。该透视展示描述性分布，不输出关联显著性或因果结论。
+
+点击胶囊或变异连接会打开右侧详情抽屉，显示原始序列、携带样本、组内分布及明确标为 SIMULATED 的功能注释。支持 Escape / 关闭按钮、一键复制 80 字符换行 FASTA、请求失败重试。未知 `*` 序列不提供伪造 FASTA。
+
+新接口：`GET /api/nodes/{node_id}`，返回数据库节点序列、各组的 `total/carriers/frequency`、样本和模拟注释；未知节点返回 404。抽屉使用完整数据库分组，画布使用当前侧栏选择，两者分母在界面中分别注明。
+
+运行方式沿用 Step 3/4，须重启后端以加载新接口。当前验收环境为后端 8001 / 前端 3001（避免占用旧预览）：
+
+```powershell
+# 仓库根目录
+.venv\Scripts\python -m uvicorn backend.main:app --port 8001
+# 另开终端，frontend 目录
+$env:BACKEND_URL='http://127.0.0.1:8001'
+npm ci
+npm run build
+npm run start -- --port 3001
+```
+
+手动验收：
+
+1. 打开 http://127.0.0.1:3001，保持六样本可见，在三种模式间切换。
+2. 500 bp 插入有 2/6 携带者：AF 插入线宽 8 px、参考旁路 16 px，标签为 66.7% Ref / 33.3% Alt。不是把 2/6 的线宽映射为任意分档。
+3. Case/Control 中该插入仅出现橙红流，Case 为 2/4 = 50%，Control 为 0/2 = 0%。在侧栏取消 HG005，Case 插入比例变为 1/3。
+4. 点击插入胶囊查看详情；或搜索 `900-901` 点击 SNP 气泡：其完整队列分布是 Case 1/4、Control 1/2。Copy FASTA 会复制当前节点实际序列，注释明确显示模拟来源。
+5. 详情中的比例不随侧栏选择改变，这是完整数据库队列分布；关闭侧栏样本只改变画布的当前选择分析。
+
+```powershell
+curl.exe --fail "http://127.0.0.1:8001/api/nodes/ins_500"
+.venv\Scripts\python -m unittest backend.test_phenotype backend.test_layout_api backend.test_data_layer -v
+# frontend 目录，保持服务运行
+$env:FRONTEND_URL='http://127.0.0.1:3001'
+npm run test:e2e -- --output="../.taste-skill/test-$(Get-Date -Format yyyyMMdd-HHmmss)"
+```
+
+后端 16 项测试通过；前端 6 个场景覆盖原功能、模式切换、线宽比例、详情和复制。新增代码位于 `backend/phenotype.py`、`frontend/src/components/variant-inspector.tsx`，聚合绘制集成在 `frontend/components/TubeMapCanvas.tsx`。

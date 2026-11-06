@@ -5,10 +5,10 @@ import { clampRegion, format, zoomRegion } from "@/lib/region";
 import TubeMapCanvas from "../../components/TubeMapCanvas";
 import type { Variant, LOD, Region, Subgraph } from "@/lib/types";
 
-export function Viewport({ region, total, lod, graph, loading, error, duration, visibleNodes, visibleEdges, sampleCount, selected, filters, onRegion, onRetry }: {
+export function Viewport({ region, total, lod, graph, loading, error, duration, visibleNodes, visibleEdges, sampleCount, selected, filters, mode, onInspect, onRegion, onRetry }: {
   region: Region; total: number; lod: LOD; graph: Subgraph | null; loading: boolean; error: string | null;
   duration: number | null; visibleNodes: number; visibleEdges: number; sampleCount: number;
-  selected: Set<string>; filters: Set<Variant>; onRegion: (region: Region) => void; onRetry: () => void;
+  mode: "individual"|"frequency"|"phenotype"; onInspect:(id:string)=>void; selected: Set<string>; filters: Set<Variant>; onRegion: (region: Region) => void; onRetry: () => void;
 }) {
   const [cursor, setCursor] = useState<number | null>(null);
   const [panning, setPanning] = useState(false);
@@ -41,7 +41,7 @@ export function Viewport({ region, total, lod, graph, loading, error, duration, 
           e.preventDefault(); onRegion(zoomRegion(region, e.key === "-" ? 2 : 0.5, total));
         }
       }}>
-      <TubeMapCanvas graph={graph} region={region} total={total} lod={lod} selected={selected} filters={filters} onRegion={onRegion} onCursor={setCursor} />
+      <TubeMapCanvas mode={mode} onInspect={onInspect} graph={graph} region={region} total={total} lod={lod} selected={selected} filters={filters} onRegion={onRegion} onCursor={setCursor} />
       {(error || (!loading && graph?.nodes.length === 0)) &&       <div className="viewport-center">
         {error ? <><Unplug size={26} className="muted" /><h2>Genome service unavailable</h2><p>{error}</p><button className="secondary-button" onClick={onRetry}><RefreshCw size={15} /> Retry connection</button></> :
           <><div className="viewport-symbol"><Crosshair size={28} strokeWidth={1} /></div>

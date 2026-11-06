@@ -113,3 +113,30 @@ test("canvas tubes, semantic bases, wheel zoom and spotlight", async ({ page }) 
   await expect(page.getByTestId("viewport-range")).not.toHaveText("900 — 901 bp");
   expect(errors).toEqual([]);
 });
+
+test("frequency modes and node inspector", async ({page,request},testInfo)=>{
+  const detail=await request.get("/api/nodes/ins_500");
+  expect(detail.status()).toBe(200);
+  const d=await detail.json();expect(d.groups.Case.carriers).toBe(2);expect(d.groups.Case.frequency).toBe(.5);expect(d.groups.Control.frequency).toBe(0);
+  await page.goto("/"); const canvas=page.getByTestId("tube-map-canvas");
+  await page.getByRole("button",{name:"Allele frequency",exact:true}).click();
+  await expect(canvas).toHaveAttribute("data-render-mode","frequency");
+  await expect.poll(async()=>JSON.parse(await canvas.getAttribute("data-flow-widths")??"[]").includes(8)).toBe(true);
+  await page.screenshot({path:testInfo.outputPath("frequency.png")});
+  await page.getByRole("button",{name:"Case / Control",exact:true}).click();
+  await expect(canvas).toHaveAttribute("data-render-mode","phenotype");
+  await page.screenshot({path:testInfo.outputPath("phenotype.png")});
+  await region(page,"900-901"); await expect.poll(()=>canvas.getAttribute("data-base-count").then(Number)).toBeGreaterThan(0);
+  const box=(await canvas.boundingBox())!;
+  let opened=false;
+  for(let y=55;y<box.height-110;y+=12){await page.mouse.click(box.x+box.width*.45,box.y+y);if(await page.getByLabel("Variant details",{exact:true}).isVisible()){opened=true;break;}}
+  expect(opened).toBe(true);
+  await expect(page.getByRole("heading",{name:"Simulated functional annotation"})).toBeVisible();
+  await expect(page.getByRole("button",{name:"Copy FASTA",exact:true})).toBeEnabled();
+  await page.context().grantPermissions(["clipboard-read","clipboard-write"]);
+  await page.getByRole("button",{name:"Copy FASTA",exact:true}).click();
+  await expect.poll(()=>page.evaluate(()=>navigator.clipboard.readText())).toMatch(/^>/);
+  await page.screenshot({path:testInfo.outputPath("inspector.png")});
+  await page.getByRole("button",{name:"Close variant details"}).click();
+  await expect(page.getByLabel("Variant details",{exact:true})).not.toBeVisible();
+});

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { VariantInspector } from "./variant-inspector";
 import Link from "next/link";
 import { ArrowRight, ChevronDown, Dna, Focus, Minus, PanelLeftOpen, Plus, RefreshCw, Search } from "lucide-react";
 import { clampRegion, format, parseRegion, resolveLOD, zoomRegion } from "@/lib/region";
@@ -10,6 +11,8 @@ import { Minimap } from "./minimap";
 import { Viewport } from "./viewport";
 
 export function Workbench() {
+  const [renderMode,setRenderMode]=useState<"individual"|"frequency"|"phenotype">("individual");
+  const [inspected,setInspected]=useState<string|null>(null);
   const [revision, setRevision] = useState(0);
   const metadata = useGenomeAPI<GenomeMeta>("/api/genome/meta", revision);
   const meta = metadata.data;
@@ -111,6 +114,8 @@ export function Workbench() {
         {(["auto", "macro", "micro"] as LODMode[]).map(value => <button key={value} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === "auto" ? "Auto" : value === "macro" ? "Macro" : "Base level"}</button>)}
       </div>
     </div>
+    <div className="render-mode-bar" role="group" aria-label="Rendering mode">{(["individual","frequency","phenotype"] as const).map(m=><button key={m} aria-pressed={renderMode===m} onClick={()=>setRenderMode(m)}>{m==="individual"?"Individual tubes":m==="frequency"?"Allele frequency":"Case / Control"}</button>)}<span>{renderMode==="phenotype"?"Case orange · Control blue · other groups excluded":"Width = selected sample-path carrier frequency"}</span></div>
+    {inspected && <VariantInspector key={inspected} nodeId={inspected} onClose={()=>setInspected(null)} />}
     <div className={`workspace-body ${sidebar ? "" : "sidebar-collapsed"} ${mobileSidebar ? "mobile-sidebar-open" : ""}`}>
       {mobileSidebar && <button className="sidebar-scrim" aria-label="Close sample controls" onClick={() => setMobileSidebar(false)} />}
       <SampleSidebar meta={meta} graph={graph} selected={selected} filters={filters} onSample={id => toggleSamples([id])} onGroup={toggleSamples} onFilter={toggleFilter} onClose={() => { setSidebar(false); setMobileSidebar(false); }} />
@@ -119,7 +124,7 @@ export function Workbench() {
           <h2>Graph workspace</h2><span className="reference-scope">Reference anchored</span></div>
           <button className="text-button refresh-button" onClick={() => setRevision(v => v + 1)}><RefreshCw size={14} className={loading ? "refreshing" : ""} />Refresh</button>
         </div>
-        <Viewport region={region} total={total} lod={lod} graph={graph} loading={loading} error={error} duration={remote.duration}
+        <Viewport mode={renderMode} onInspect={setInspected} region={region} total={total} lod={lod} graph={graph} loading={loading} error={error} duration={remote.duration}
           selected={selected} filters={filters} visibleNodes={visibleNodes} visibleEdges={visibleEdges} sampleCount={selected.size} onRegion={navigate} onRetry={() => setRevision(v => v + 1)} />
         <Minimap region={region} total={total} onChange={navigate} />
       </div>

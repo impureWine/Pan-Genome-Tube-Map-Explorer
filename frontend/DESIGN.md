@@ -53,3 +53,9 @@ Data provenance: all numbers and sample/group names come from the Step 1 mock da
 Kept Data terminal seed 1922461817 and Public Sans, without redraw. The subject's own haplotype paths now replace the empty grid. Neon glow and glass tooltips are explicit user requirements; the surrounding chrome remains quiet. No stock imagery or fabricated graph data.
 
 ROUND 1 → 2: reviewed all six screenshots at 1440/768/390. Fixed collapsed horizontal curve handles after coordinate projection and moved inversion labels away from the mobile HUD. Final self-assessment: design 7.9, usability 8.0, creativity 7.6, content 8.3, overall 7.9. Remaining compact axis/status text is the inspector's tiny-text warning. Sample palette intentionally uses two hue families; the dense macro capsules become more legible on zoom. No FPS benchmark is claimed.
+
+## Step 5 review
+
+Kept Data terminal direction and seed 1922461817, no redraw. The core device is now a frequency-scaled branch: one selected-cohort cyan flow versus separated Case-orange and Control-blue flows. The exact phenotype colors and glass inspector are explicit user requirements. All carriers and denominators are computed, and mock annotations are labelled SIMULATED.
+
+Reviewed desktop/tablet/mobile fold and page screenshots, plus frequency, phenotype and inspector captures. The main frame remains aligned and the mode bar wraps on mobile. Inspector measurements: 0 FAIL, 1 WARN for compact axis/status text. The drawer shows real sequence and group denominators; clipboard copy was verified in the browser. Self-assessment: design 7.9, usability 8.0, creativity 7.8, content 8.2 → overall 8.0. No photos or generated figures. Remaining limitation: the tiny synthetic cohort supports descriptive carrier proportions, not inferential phenotype association.

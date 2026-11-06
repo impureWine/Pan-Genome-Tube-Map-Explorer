@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .layout_engine import LayoutTooLarge, genome_meta, layout_subgraph
 from .schemas import GenomeMeta, LOD, Subgraph
+from .phenotype import node_details
 
 
 def create_app(database_path: str | Path | None = None) -> FastAPI:
@@ -50,6 +51,14 @@ def create_app(database_path: str | Path | None = None) -> FastAPI:
                 return layout_subgraph(conn, start, end, lod)
             except LayoutTooLarge as exc:
                 raise HTTPException(413, str(exc)) from exc
+
+    @application.get('/api/nodes/{node_id:path}')
+    def inspect_node(node_id: str):
+        with database() as conn:
+            result = node_details(conn, node_id)
+            if result is None:
+                raise HTTPException(404, 'Node not found')
+            return result
 
     return application
 
